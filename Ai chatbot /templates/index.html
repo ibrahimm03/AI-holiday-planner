@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>AI Holiday Planner</title>  
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+    html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+    }
+    body {
+        background-image: url('https://images.pexels.com/photos/2662116/pexels-photo-2662116.jpeg');
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        min-height: 100vh;
+    }
+    body::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(255, 215, 0, 0.3);
+        z-index: -1;
+    }
+    h1 {
+        color: white;
+        font-size: 60px;
+        text-align: center;
+        text-shadow: 2px 2px 4px black;
+    }
+    p {
+        color: black;
+        font-size: 20px;
+        text-align: center;
+    }
+    #homepage {
+        width: 100%;
+        padding: 50px;
+        text-align: center;
+    }
+    #startButton {
+        background-color: yellow;
+        color: black;
+        font-size: 18px;
+        padding: 15px 30px;
+        border-radius: 25px;
+        overflow: hidden;
+        position: relative;
+        border: none;
+        cursor: pointer;
+    }
+    #startButton::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent);
+        animation: shine 2s infinite;
+    }
+    @keyframes shine {
+        0% { left: -100%; }
+        100% { left: 100%; }
+    }
+    #startButton:hover {
+        transform: scale(0.95);
+    }
+    #chatbot {
+        display: none;
+        text-align: center;
+        padding: 50px;
+    }
+    #chat-window {
+        width: 80%;
+        margin: 0 auto;
+        padding: 30px;
+        border-radius: 10px;
+        background-color: white;
+        height: 400px;
+        overflow-y: auto;
+    }
+    #input-area {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        margin-top: 20px;
+    }
+    #userInput {
+        width: 60%;
+        padding: 15px;
+        border-radius: 25px;
+        border: none;
+        font-size: 16px;
+    }
+    #sendButton {
+        padding: 15px 25px;
+        border-radius: 25px;
+        border: none;
+        background-color: yellow;
+        font-size: 18px;
+        cursor: pointer;
+    }
+    #sendButton:hover {
+        transform: scale(0.95);
+    }
+    #cards {
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+        margin-top: 40px;
+    }
+    .card {
+        background-color: rgba(255, 255, 255, 0.6);
+        border-radius: 15px;
+        padding: 30px;
+        width: 250px;
+        cursor: pointer;
+        transition: transform 0.2s;
+    }
+    .card:hover {
+        transform: scale(1.05);
+    }
+    </style>
+</head>
+<body>
+<div id="homepage">
+    <h1>AI Holiday Planner</h1>
+    <p>Hello, I am here to assist you...</p>
+    <button id="startButton">Let's Start Planning! 🌍</button>
+    <div id="cards">
+        <div class="card" id="destinationsCard">
+            <h2>🏖️ Destinations</h2>
+            <p>Discover amazing places around the world tailored just for you</p>
+        </div>
+        <div class="card" id="budgetsCard">
+            <h2>💰 Budgets</h2>
+            <p>Plan your perfect trip without breaking the bank</p>
+        </div>
+        <div class="card" id="hotelsCard">
+            <h2>🏨 Hotels</h2>
+            <p>Find the best hotels and accommodation for your stay</p>
+        </div>
+    </div>
+</div>
+<div id="chatbot">
+    <div id="chat-window"></div>
+    <div id="input-area">
+        <input type="text" id="userInput" placeholder="Start Planning...">
+        <button id="sendButton">➤</button>
+    </div>
+</div>
+
+<script>
+    const homepage = document.getElementById('homepage');
+    const chatbot = document.getElementById('chatbot'); // grab chatbot section
+const startButton = document.getElementById('startButton'); // grab start button
+const sendButton = document.getElementById('sendButton'); // grab send button
+const userInput = document.getElementById('userInput'); // grab text input box
+const chatWindow = document.getElementById('chat-window'); // grab chat window
+const destinationsCard = document.getElementById('destinationsCard'); // grab destinations card
+const budgetsCard = document.getElementById('budgetsCard'); // grab budgets card
+const hotelsCard = document.getElementById('hotelsCard'); // grab hotels card
+
+// hide homepage and show chatbot
+function showChatbot() {
+    homepage.style.display = 'none';
+    chatbot.style.display = 'block';
+}
+
+// add a message to the chat window
+function addMessage(message, sender) {
+    const div = document.createElement('div');
+    div.textContent = message;
+    div.style.padding = '10px';
+    div.style.margin = '10px';
+    div.style.borderRadius = '10px';
+    div.style.backgroundColor = sender === 'user' ? '#FFD700' : '#f0f0f0';
+    div.style.textAlign = sender === 'user' ? 'right' : 'left';
+    chatWindow.appendChild(div);
+    chatWindow.scrollTop = chatWindow.scrollHeight;
+}
+
+// send message to flask and get claude's response
+async function sendMessage(message) {
+    addMessage(message, 'user');
+    userInput.value = '';
+
+    const response = await fetch('/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: message })
+    });
+
+    const data = await response.json();
+    addMessage(data.response, 'assistant');
+}
+
+// start button click - show chatbot
+startButton.addEventListener('click', function() {
+    showChatbot();
+});
+
+// send button click - send message
+sendButton.addEventListener('click', function() {
+    const message = userInput.value.trim();
+    if (message) sendMessage(message);
+});
+
+// press enter to send
+userInput.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        const message = userInput.value.trim();
+        if (message) sendMessage(message);
+    }
+});
+
+// destinations card click
+destinationsCard.addEventListener('click', function() {
+    showChatbot();
+    sendMessage('I want to explore holiday destinations, can you help me?');
+});
+
+// budgets card click
+budgetsCard.addEventListener('click', function() {
+    showChatbot();
+    sendMessage('I need help planning my holiday budget, can you help me?');
+});
+
+// hotels card click
+hotelsCard.addEventListener('click', function() {
+    showChatbot();
+    sendMessage('I need help finding the best hotels for my holiday, can you help me?');
+});
+
+</script>
+</body>
+</html>
